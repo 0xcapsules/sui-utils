@@ -1,4 +1,4 @@
-### Diem Throwback
+## Diem Throwback
 
 This module is a classic throwback to the good old days of Diem!
 
@@ -14,12 +14,13 @@ This operation was subject to the following rules:
 
 Rule #3 means it was impossible to 'clog up' someone else's storage without their authorization by putting an object T at their address. This also gave modules god-like power over their own resources, in that if they declared T they could grab any T in existence, even without the owner's signature, and do whatever they want, including modifying and destroying T.
 
-In Diem, intra-validator partitioning would have to be done by (module + module's types)
-Sui eliminated these operators. Sui intra-validator paritioning will have to be done by (object-id)
+In Diem, intra-validator partitioning would have been done by module + module's types.
 
-### Local Storage Operator
+Sui eliminated these operators. Sui intra-validator partitioning will likely be done based on object-id and child objects of that id. This should make parallelization easier.
 
-LSO (Local Storage Operator) replicates this API. Instead of grabbing items from global stroge based on address, it grabs items from local storage based on object O's id (address).
+## Local Storage Operator
+
+LSO (Local Storage Operator) replicates Diem's old API. Instead of grabbing items from global storage based on address, it grabs items from local storage based on object O's id (address).
 
 It is subject to the following rules:
 
@@ -28,4 +29,4 @@ It is subject to the following rules:
 
 Rule #2 means that the caller is either O's declaring module, or O's declaring module exposed some ability for external functions to obtain O's UIDs.
 
-Note that I had to change the function names slightly because the old names are still reserved.
+Note that I had to change the function names slightly because the old names are still reserved by the Move VM.
