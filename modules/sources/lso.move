@@ -1,4 +1,4 @@
-module lso::lso {
+module utils::lso {
     use std::type_name::{Self, TypeName};
     use sui::dynamic_field;
     use sui::object::UID;
