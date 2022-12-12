@@ -1,3 +1,11 @@
+## How To Use
+
+In your Move.toml file, under "[dependencies]" add:
+
+`Utils = { git = "https://github.com/0xnoots/noot-utils.git" subdir = "modules", rev = "master" }`
+
+You can then import packages like `use noot_utils::encode` at the top of your module file.
+
 ## Diem Throwback
 
 This module is a classic throwback to the good old days of Diem!

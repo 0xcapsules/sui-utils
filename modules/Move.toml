@@ -1,10 +1,9 @@
 [package]
-name = "NootUtilities"
-version = "0.2.0"
+name = "Utils"
+version = "0.3.0"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework", rev = "devnet" }
 
 [addresses]
-noot_utils =  "0xbee71b0aacabca0192147061512b009e1bf05d6f"
-sui = "0x2"
+noot_utils =  "0xe095bc1a07af9db9b11a03942140857fd6e4ca84"
