@@ -1,4 +1,4 @@
-module utils::map {
+module noot_utils::map {
     use std::option::{Self, Option};
     use std::vector;
     use sui::dynamic_field;
@@ -131,9 +131,9 @@ module utils::map {
 }
 
 #[test_only]
-module sui_playground::map_tests {
+module noot_utils::map_tests {
     use sui::test_scenario;
-    use sui_playground::map;
+    use noot_utils::map;
     use std::debug;
     use std::option;
     use std::vector;
