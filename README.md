@@ -2,9 +2,9 @@
 
 In your Move.toml file, under "[dependencies]" add:
 
-`Utils = { git = "https://github.com/0xnoots/noot-utils.git" subdir = "modules", rev = "master" }`
+`Utils = { git = "https://github.com/0xnoots/sui-utils.git" subdir = "modules", rev = "master" }`
 
-You can then import packages like `use noot_utils::encode` at the top of your module file.
+You can then import packages like `use sui_utils::encode` at the top of your module file.
 
 ## Diem Throwback
 
