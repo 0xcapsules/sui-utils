@@ -1,4 +1,4 @@
-module noot_utils::lso {
+module sui_utils::lso {
     use std::type_name::{Self, TypeName};
     use sui::dynamic_field;
     use sui::object::UID;

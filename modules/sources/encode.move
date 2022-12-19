@@ -7,7 +7,7 @@
 // This does not include the 0x i the package-id, and they are all utf8 strings.
 // A 'module address' is just <package_id>::<module_name>
 
-module noot_utils::encode {
+module sui_utils::encode {
     use std::string::{Self, String, utf8};
     use std::vector;
     use std::ascii;
@@ -128,7 +128,7 @@ module noot_utils::encode {
 }
 
 #[test_only]
-module noot_utils::encode_test {
+module sui_utils::encode_test {
     use std::debug;
     use sui::test_scenario;
     use std::string;
