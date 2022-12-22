@@ -14,8 +14,11 @@ module sui_utils::encode {
     use std::type_name;
     use sui::vec_map::{Self, VecMap};
     use sui::bcs;
+    use sui::object::{Self, ID};
+    use sui_utils::vector::{slice_vector};
 
     const EINVALID_TYPE_NAME: u64 = 0;
+    const ENOT_ASCII_CHARACTER: u64 = 1;
 
     // This will fail if there is an odd number of entries in the first vector
     // It will also fail if the bytes are not utf8 strings
@@ -76,20 +79,15 @@ module sui_utils::encode {
         (module_addr, struct_name)
     }
 
-    public fun is_same_module<Type1, Type2>(): bool {
-        let (module1, _) = type_name_<Type1>();
-        let (module2, _) = type_name_<Type2>();
-
-        (module1 == module2)
+    public fun package_id<T>(): ID {
+        let type_ascii = type_name::into_string(type_name::get<T>());
+        let bytes_full = ascii::into_bytes(type_ascii);
+        let bytes = slice_vector(&bytes_full, 0, 40);
+        ascii_bytes_into_id(bytes)
     }
 
-    public fun is_same_module_(type_name1: String, type_name2: String): bool {
-        let (module1, _) = decompose_type_name(type_name1);
-        let (module2, _) = decompose_type_name(type_name2);
-
-        (module1 == module2)
-    }
-
+    // Takes the module address of Type T, and appends an arbitrary utf8 string to the end of it
+    // This creates a fully-qualified address for a struct that may not exist
     public fun append_struct_name<Type>(struct_name: String): String {
         let (type_name, _) = type_name_<Type>();
         string::append(&mut type_name, utf8(b"::"));
@@ -98,7 +96,9 @@ module sui_utils::encode {
         type_name
     }
 
-    // addresses are 20 bytes, whereas the string-encoded version is 40 bytes.
+    // =============== ASCII Helpers ===============
+
+    // Addresses are 20 bytes, whereas the string-encoded address is 40 bytes.
     // Outputted strings do not include the 0x prefix.
     public fun addr_into_string(addr: &address): String {
         let ascii_bytes = vector::empty<u8>();
@@ -118,12 +118,57 @@ module sui_utils::encode {
         utf8(ascii::into_bytes(string))
     }
 
+    public fun ascii_into_id(str: ascii::String): ID {
+        ascii_bytes_into_id(ascii::into_bytes(str))
+    }
+
+    // Must be ascii-bytes
+    public fun ascii_bytes_into_id(ascii_bytes: vector<u8>): ID {
+        let (i, addr_bytes) = (0, vector::empty<u8>());
+
+        // combine every pair of bytes; we will go from 40 bytes down to 20
+        while (i < vector::length(&ascii_bytes)) {
+            let low: u8 = ascii_to_u8(*vector::borrow(&ascii_bytes, i + 1));
+            let high: u8 = ascii_to_u8(*vector::borrow(&ascii_bytes, i)) * 16u8;
+            vector::push_back(&mut addr_bytes, low + high);
+            i = i + 2;
+        };
+
+        object::id_from_bytes(addr_bytes)
+    }
+
     public fun u8_to_ascii(num: u8): u8 {
         if (num < 10) {
             num + 48
         } else {
             num + 87
         }
+    }
+
+    public fun ascii_to_u8(char: u8): u8 {
+        assert!(ascii::is_valid_char(char), ENOT_ASCII_CHARACTER);
+
+        if (char < 58) {
+            char - 48
+        } else {
+            char - 87
+        }
+    }
+
+    // =============== Module Comparison ===============
+
+    public fun is_same_module<Type1, Type2>(): bool {
+        let (module1, _) = type_name_<Type1>();
+        let (module2, _) = type_name_<Type2>();
+
+        (module1 == module2)
+    }
+
+    public fun is_same_module_(type_name1: String, type_name2: String): bool {
+        let (module1, _) = decompose_type_name(type_name1);
+        let (module2, _) = decompose_type_name(type_name2);
+
+        (module1 == module2)
     }
 }
 
@@ -136,7 +181,10 @@ module sui_utils::encode_test {
     use sui::bcs;
     use sui::coin::{Self, Coin};
     use sui::sui::SUI;
-    use utils::encode;
+    use sui_utils::encode;
+
+    // test failure codes
+    const EID_DOES_NOT_MATCH: u64 = 1;
 
     // bcs bytes != utf8 bytes
     #[test]
@@ -198,6 +246,16 @@ module sui_utils::encode_test {
         let scenario = test_scenario::begin(@0x69);
         {
             let (_addr, _type) = encode::decompose_type_name(string::utf8(b"123456"));
+        };
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    public fun package_id_test() {
+        let scenario = test_scenario::begin(@0x79);
+        let _ctx = test_scenario::ctx(&mut scenario);
+        {
+            assert!(encode::package_id<Coin<SUI>>() == object::id_from_address(@0x2), EID_DOES_NOT_MATCH);
         };
         test_scenario::end(scenario);
     }

@@ -1,3 +1,5 @@
+// Local Storage Operator
+
 module sui_utils::lso {
     use std::type_name::{Self, TypeName};
     use sui::dynamic_field;
