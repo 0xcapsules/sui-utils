@@ -7,7 +7,7 @@ module sui_utils::map {
 
     const MAX_LENGTH: u64 = 65536;
 
-    // Error codes
+    // Error enums
     const EKEY_ALREADY_EXISTS: u64 = 0;
     const EKEY_NOT_FOUND: u64 = 1;
     const EMAP_IS_FULL: u64 = 2;
@@ -19,13 +19,11 @@ module sui_utils::map {
         index: vector<Key>
     }
 
-    struct Iter<Key> has drop {
-        for: ID,
-        keys: vector<Key>
-    }
-
     public fun empty<Key: store + copy + drop, Value: store>(ctx: &mut TxContext): Map<Key, Value> {
-        Map { id: object::new(ctx), index: vector::empty<Key>() }
+        Map { 
+            id: object::new(ctx),
+            index: vector::empty<Key>()
+        }
     }
 
     public fun add<Key: store + copy + drop, Value: store>(map: &mut Map<Key, Value>, key: Key, value: Value) {
@@ -61,8 +59,34 @@ module sui_utils::map {
         vector::length(&map.index)
     }
 
-    public fun index<Key: store + copy + drop, Value: store>(map: &Map<Key, Value>): vector<Key> {
+    public fun into_keys<Key: store + copy + drop, Value: store>(map: &Map<Key, Value>): vector<Key> {
         *&map.index
+    }
+
+    // This iterates over and deletes all child elements, so no data is orphaned
+    // This only works if the Value has drop
+    public fun delete<Key: store + copy + drop, Value: store + drop>(map: Map<Key, Value>) {
+        let Map { id, index } = map;
+        let i = 0;
+        while (i < vector::length(&index)) {
+            dynamic_field::remove<Key, Value>(&mut id, *vector::borrow(&index, i));
+            i = i + 1;
+        };
+        object::delete(id);
+    }
+
+    public fun delete_empty<Key: store + copy + drop, Value: store>(map: Map<Key, Value>) {
+        assert!(vector::length(&map.index) == 0, EMAP_NOT_EMPTY);
+
+        let Map { id, index: _ } = map;
+        object::delete(id);
+    }
+
+    // ========== Iterator Functions ============
+
+    struct Iter<Key> has drop {
+        for: ID,
+        keys: vector<Key>
     }
 
     public fun iter<Key: store + copy + drop, Value: store>(map: &Map<Key, Value>): Iter<Key> {
@@ -92,26 +116,6 @@ module sui_utils::map {
         option::none()
     }
 
-    public fun into_next() {
-
-    }
-
-    public fun remove_next() {
-
-    }
-
-    // TO DO: iterate over this and remove elements; this orphans elements
-    public fun delete<Key: store + copy + drop, Value: store>(map: Map<Key, Value>) {
-        let Map { id, index: _ } = map;
-        object::delete(id);
-    }
-
-    public fun delete_empty<Key: store + copy + drop, Value: store>(map: Map<Key, Value>) {
-        assert!(vector::length(&map.index) == 0, EMAP_NOT_EMPTY);
-        let Map { id, index: _ } = map;
-        object::delete(id);
-    }
-
     // ========== Internal Functions ============
 
     fun add_to_index<K: drop, V>(map: &mut Map<K, V>, key: K) {
@@ -133,13 +137,13 @@ module sui_utils::map {
 #[test_only]
 module sui_utils::map_tests {
     use sui::test_scenario;
-    use sui_utils::map;
+    use sui_utils::map::{Self, Map, Iter};
     use std::debug;
     use std::option;
     use std::vector;
 
     #[test]
-    public fun iterate() {
+    public fun iterator() {
         let scenario = test_scenario::begin(@55);
         let ctx = test_scenario::ctx(&mut scenario);
         {
@@ -162,7 +166,7 @@ module sui_utils::map_tests {
     }
 
     #[test]
-    public fun iterate2() {
+    public fun iterate_with_index() {
         let scenario = test_scenario::begin(@55);
         let ctx = test_scenario::ctx(&mut scenario);
         {
@@ -171,7 +175,7 @@ module sui_utils::map_tests {
             map::add(&mut new_map, 1, 99);
             map::add(&mut new_map, 2, 100074);
 
-            let index = map::index(&new_map);
+            let index = map::into_keys(&new_map);
             let i = 0;
             while (i < vector::length(&index)) {
                 let next = vector::borrow(&index, i);
@@ -183,5 +187,33 @@ module sui_utils::map_tests {
             map::delete(new_map);
         };
         test_scenario::end(scenario);
+    }
+
+    #[test]
+    public fun iterate_recursively() {
+        let scenario = test_scenario::begin(@55);
+        let ctx = test_scenario::ctx(&mut scenario);
+        {
+            let new_map = map::empty<u64, u64>(ctx);
+            map::add(&mut new_map, 0, 15);
+            map::add(&mut new_map, 1, 99);
+            map::add(&mut new_map, 2, 100074);
+
+            recursive(&new_map, &mut map::iter(&new_map));
+
+            map::delete(new_map);
+        };
+        test_scenario::end(scenario);
+    }
+
+    public fun recursive<Key: store + copy + drop, Value: store>(map: &Map<Key, Value>, iter: &mut Iter<Key>) {
+        let next = map::next(map, iter);
+        if (next == option::none()) { 
+            return
+        };
+        let value = map::borrow(map, option::destroy_some(next));
+        debug::print(value);
+
+        recursive(map, iter);
     }
 }
