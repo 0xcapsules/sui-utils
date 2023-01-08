@@ -15,7 +15,7 @@ module sui_utils::encode {
     use sui::vec_map::{Self, VecMap};
     use sui::bcs;
     use sui::object::{Self, ID};
-    use sui_utils::vector::{slice_vector};
+    use sui_utils::vector::slice;
 
     const EINVALID_TYPE_NAME: u64 = 0;
     const ENOT_ASCII_CHARACTER: u64 = 1;
@@ -82,7 +82,7 @@ module sui_utils::encode {
     public fun package_id<T>(): ID {
         let type_ascii = type_name::into_string(type_name::get<T>());
         let bytes_full = ascii::into_bytes(type_ascii);
-        let bytes = slice_vector(&bytes_full, 0, 40);
+        let bytes = slice(&bytes_full, 0, 40);
         ascii_bytes_into_id(bytes)
     }
 
