@@ -77,11 +77,14 @@ module sui_utils::encode {
     // Takes the module address of Type T, and appends an arbitrary ascii string to the end of it
     // This creates a fully-qualified address for a struct that may not exist
     public fun append_struct_name<Type>(struct_name: String): String {
-        let (type_name, _) = type_name_<Type>();
-        ascii_new::append(&mut type_name, ascii::string(b"::"));
-        ascii_new::append(&mut type_name, struct_name);
-        
-        type_name
+        let (module_addr, _) = type_name_<Type>();
+        append_struct_name_(module_addr, struct_name)
+    }
+
+    public fun append_struct_name_(module_addr: String, struct_name: String): String {
+        ascii_new::append(&mut module_addr, ascii::string(b"::"));
+        ascii_new::append(&mut module_addr, struct_name);
+        module_addr
     }
 
     // =============== Module Comparison ===============
