@@ -1,6 +1,6 @@
 // Cannot change types of value; this will abort if the Value-type of the existing object is wrong. The value top must be droppable
 
-module sui_utils::df_set {
+module sui_utils::dynamic_field2 {
     use sui::object::UID;
     use sui::dynamic_field;
 

@@ -1,4 +1,4 @@
-module sui_utils::vector {
+module sui_utils::vector2 {
     use std::vector;
     
     const EINVALID_SLICE: u64 = 0;

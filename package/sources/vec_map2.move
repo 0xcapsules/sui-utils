@@ -1,4 +1,4 @@
-module sui_utils::vec_map {
+module sui_utils::vec_map2 {
     use std::string::{String as UTF8, utf8};
     use std::vector;
     use sui::vec_map::{Self, VecMap};

@@ -1,9 +1,9 @@
-module sui_utils::ascii {
+module sui_utils::ascii2 {
     use std::vector;
     use std::ascii::{Self, String, Char};
     use sui::bcs;
     use sui::object::{Self, ID};
-    use sui_utils::vector::slice;
+    use sui_utils::vector2;
 
     // Error enums
     const EINVALID_SUB_STRING: u64 = 0;
@@ -24,7 +24,7 @@ module sui_utils::ascii {
         assert!(j <= ascii::length(s) && i <= j, EINVALID_SUB_STRING);
 
         let bytes = ascii::into_bytes(*s);
-        let slice = slice(&bytes, i, j);
+        let slice = vector2::slice(&bytes, i, j);
         ascii::string(slice)
     }
 
@@ -140,7 +140,7 @@ module sui_utils::ascii_test {
     use std::ascii::{string, length};
     use sui::object;
     use sui::test_scenario;
-    use sui_utils::ascii;
+    use sui_utils::ascii2;
 
     #[test]
     public fun decompose_type() {
@@ -148,18 +148,18 @@ module sui_utils::ascii_test {
         {
             let type = string(b"0x21a31ea6f1924898b78f06f0d929f3b91a2748c0::schema::Schema");
             let delimeter = string(b"::");
-            let i = ascii::index_of(&type, &delimeter);
+            let i = ascii2::index_of(&type, &delimeter);
 
-            let slice = ascii::sub_string(&type, 0, i);
+            let slice = ascii2::sub_string(&type, 0, i);
             assert!(string(b"0x21a31ea6f1924898b78f06f0d929f3b91a2748c0") == slice, 0);
 
-            let slice = ascii::sub_string(&type, i + 2, length(&type));
+            let slice = ascii2::sub_string(&type, i + 2, length(&type));
             assert!(string(b"schema::Schema") == slice, 0);
 
-            let i = ascii::index_of(&type, &string(b"1a31e"));
+            let i = ascii2::index_of(&type, &string(b"1a31e"));
             assert!(i == 3, 0);
 
-            // debug::print(&utf8(into_bytes(ascii::sub_string(&type, i + 2, length(&type)))));
+            // debug::print(&utf8(into_bytes(ascii2::sub_string(&type, i + 2, length(&type)))));
         };
         test_scenario::end(scenario);
     }
@@ -171,7 +171,7 @@ module sui_utils::ascii_test {
         {
             let uid = object::new(ctx);
             let addr = object::uid_to_address(&uid);
-            let string = ascii::addr_into_string(&addr);
+            let string = ascii2::addr_into_string(&addr);
             assert!(string(b"fdc6d587c83a348e456b034e1e0c31e9a7e1a3aa") == string, 0);
             object::delete(uid);
         };

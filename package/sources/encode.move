@@ -11,17 +11,19 @@ module sui_utils::encode {
     use std::ascii::{Self, String};
     use std::type_name;
     use sui::object::ID;
-    use sui_utils::vector::slice;
-    use sui_utils::ascii as ascii_new;
+    use sui_utils::vector2;
+    use sui_utils::ascii2;
 
     // error constants
     const EINVALID_TYPE_NAME: u64 = 0;
+
+    const SUI_ADDRESS_LENGTH: u64 = 20;
 
     // The string returned is the fully-qualified type name, with no abbreviations or 0x appended to addresses,
     // Examples:
     // 0000000000000000000000000000000000000002::devnet_nft::DevNetNFT
     // 0000000000000000000000000000000000000002::coin::Coin<0000000000000000000000000000000000000002::sui::SUI>
-    // 0000000000000000000000000000000000000001::ascii_new::String
+    // 0000000000000000000000000000000000000001::ascii::String
     public fun type_name<T>(): String {
         type_name::into_string(type_name::get<T>())
     }
@@ -39,18 +41,18 @@ module sui_utils::encode {
     public fun decompose_type_name(s1: String): (String, String) {
         let delimiter = ascii::string(b"::");
 
-        let i = ascii_new::index_of(&s1, &delimiter);
+        let i = ascii2::index_of(&s1, &delimiter);
         assert!(ascii::length(&s1) > i, EINVALID_TYPE_NAME);
 
-        let s2 = ascii_new::sub_string(&s1, i + 2, ascii::length(&s1));
-        let j = ascii_new::index_of(&s2, &delimiter);
+        let s2 = ascii2::sub_string(&s1, i + 2, ascii::length(&s1));
+        let j = ascii2::index_of(&s2, &delimiter);
         assert!(ascii::length(&s2) > j, EINVALID_TYPE_NAME);
 
-        // let package_id = ascii_new::sub_string(&s1, 0, i);
-        // let module_name = ascii_new::sub_string(&s2, 0, j);
+        // let package_id = ascii2::sub_string(&s1, 0, i);
+        // let module_name = ascii2::sub_string(&s2, 0, j);
 
-        let module_addr = ascii_new::sub_string(&s1, 0, i + j + 2);
-        let struct_name = ascii_new::sub_string(&s2, j + 2, ascii::length(&s2));
+        let module_addr = ascii2::sub_string(&s1, 0, i + j + 2);
+        let struct_name = ascii2::sub_string(&s2, j + 2, ascii::length(&s2));
 
         (module_addr, struct_name)
     }
@@ -59,19 +61,28 @@ module sui_utils::encode {
     public fun decompose_module_addr(s1: String): (String, String) {
         let delimiter = ascii::string(b"::");
 
-        let i = ascii_new::index_of(&s1, &delimiter);
+        let i = ascii2::index_of(&s1, &delimiter);
         assert!(ascii::length(&s1) > i, EINVALID_TYPE_NAME);
 
-        let package_id = ascii_new::sub_string(&s1, 0, i);
-        let module_name = ascii_new::sub_string(&s1, i + 2, ascii::length(&s1));
+        let package_id = ascii2::sub_string(&s1, 0, i);
+        let module_name = ascii2::sub_string(&s1, i + 2, ascii::length(&s1));
 
         (package_id, module_name)
     }
 
     public fun package_id<T>(): ID {
         let bytes_full = ascii::into_bytes(type_name<T>());
-        let bytes = slice(&bytes_full, 0, 40);
-        ascii_new::ascii_bytes_into_id(bytes)
+        // hex doubles the number of characters used
+        let bytes = vector2::slice(&bytes_full, 0, SUI_ADDRESS_LENGTH * 2); 
+        ascii2::ascii_bytes_into_id(bytes)
+    }
+
+    // Returns just the module_name + struct_name, such as coin::Coin<0x599::paul_coin::PaulCoin>,
+    // or my_module::CoolStruct
+    public fun module_and_struct_names<T>(): String {
+        let bytes_full = ascii::into_bytes(type_name<T>());
+        vector2::slice_mut(&mut bytes_full, 0, SUI_ADDRESS_LENGTH * 2 + 2);
+        ascii::string(bytes_full)
     }
 
     // Takes the module address of Type T, and appends an arbitrary ascii string to the end of it
@@ -82,8 +93,8 @@ module sui_utils::encode {
     }
 
     public fun append_struct_name_(module_addr: String, struct_name: String): String {
-        ascii_new::append(&mut module_addr, ascii::string(b"::"));
-        ascii_new::append(&mut module_addr, struct_name);
+        ascii2::append(&mut module_addr, ascii::string(b"::"));
+        ascii2::append(&mut module_addr, struct_name);
         module_addr
     }
 
